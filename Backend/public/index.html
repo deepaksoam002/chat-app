@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat-App| Socket.IO</title>
+    <style>
+        .main-container {
+            display: flex;
+            justify-content: center;
+            align-items: start;
+            height: 90vh;
+        }
+
+        .chat-container {
+            display: flex;
+            justify-content: center;
+            border: 1px solid gray;
+            margin-top: 20px;
+            padding: 20px;
+            width: 90%;
+            border-radius: 10px;
+            height: 80vh;
+        }
+
+        .contact-list {
+            width: 30%;
+            margin: 10px;
+            padding: 10px;
+            max-height: 90vh;
+            overflow-y: auto;
+            border: 1px solid gray;
+            border-radius: 10px;
+        }
+
+        .contact-box {
+            margin: 5px;
+            padding: 10px;
+            border: 1px solid gray;
+        }
+
+        .message-container {
+            width: 70%;
+            border: 1px solid gray;
+            display: flex;
+            justify-content: start;
+            flex-direction: column;
+            border-radius: 10px;
+        }
+
+        .message-space {
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            height: 80vh;
+        }
+
+        .info-banner {
+            border: 1px solid gray;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            border-radius: 10px;
+
+        }
+        .info-banner span {
+            padding: 8px;
+            margin: 2px;
+
+        }
+        .action-box{
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 8px;
+            gap: 20px;
+
+        }
+        #message-box{
+            width:60%;
+            padding: 6px;
+            border-radius: 10px;
+
+        }
+        button{
+            padding: 6px 18px;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+        .message{
+            margin:5px;
+            padding:5px;
+        }
+    </style>
+</head>
+
+<body style="margin: 0px; padding: 0px;">
+
+    <!-- // nav bar -->
+    <div style="border: 1px solid gray; padding: 12px;">
+        <span>Chat-App | Socket.IO</span>
+    </div>
+
+    <main class="main-container">
+
+        <div class="chat-container">
+            <!-- // side panel to show all rooms and contect -->
+            <div class="contact-list">
+                <div class="contact-box"> <span>Back</span></div>
+                <div class="contact-box">contact number 1</div>
+                <div class="contact-box">contact number 2</div>
+                <div class="contact-box">contact number 3</div>
+                <div class="contact-box">contact number 4</div>
+                <div class="contact-box">contact number 5</div>
+                <div class="contact-box">contact number 6</div>
+                <div class="contact-box">contact number 7</div>
+
+
+            </div>
+            <!-- here we display all messages and also message send input box  -->
+
+            <div class="message-container">
+                <div class="info-banner">
+                    <span>Contact1</span>
+                    <span>status : online</span>
+                </div>
+                <div class="message-space">
+                   
+
+                </div>
+                <div class="action-box">
+                    <input type="text" name="message-box" id="message-box"  />
+                    <button onclick="sendMessage()">send</button>
+
+                </div>
+            </div>
+        </div>
+    </main>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+
+        const socket = io();
+
+        function sendMessage() {
+            const messageInputBox = document.getElementById("message-box");
+            const message = messageInputBox.value;
+            const chatSpace = document.querySelector(".message-space");
+            const div = document.createElement('div');
+            div.className = 'message';  
+            div.style.textAlign = 'right';
+            div.textContent = message;
+            console.log(div);
+            chatSpace.appendChild(div);
+
+            console.log(message);
+            if (message) {
+                socket.emit("sendMessage", message)
+            }
+
+            messageInputBox.value = '';
+        }
+
+        socket.on("newMessage", (msg) => {
+            const chatSpace = document.querySelector(".message-space");
+            const div = document.createElement('div');
+            div.className = 'message';  
+            div.style.textAlign = 'left';
+            div.textContent = msg;
+            console.log(div);
+            chatSpace.appendChild(div);
+        })
+
+    </script>
+
+</body>
+
+</html>
