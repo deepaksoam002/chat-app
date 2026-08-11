@@ -1,5 +1,8 @@
 const { Schema, model } = require('mongoose');
 const { randomBytes, createHmac } = require('crypto')
+const { asyncHandler } = require("../utils/asyncHandler");
+const { ApiError } = require("../utils/apiError");
+const  jwt = require("jsonwebtoken");
 
 const userSchema = new Schema({
     username: {
@@ -20,7 +23,7 @@ const userSchema = new Schema({
         type: String,
 
     },
-    refreshTokenVersion: {
+    refreshToken: {
         type: String,
         required: true
     }
@@ -29,64 +32,87 @@ const userSchema = new Schema({
 
 // hash password befor save in data base.........
 
-userSchema.pre("save", async function () {
-    try {
+userSchema.pre("save", asyncHandler( async function () {
+    
 
-
-        const user = this;
-
-        if (!user.isModified("password")) return;
+        if (!this.isModified("password")) return;
 
         const salt = randomBytes(16).toString();
         const hashPassword = createHmac('sha256', salt).update(user.password).digest("hex");
 
-        user.salt = salt;
-        user.password = hashPassword;
-       
-
-    } catch (error) {
-
-        console.error(" message :", error);
-        throw new Error("Failed to hash password");
-    }
-
-});
+        this.salt = salt;
+        this.password = hashPassword;
+    
+}
+));
 
 
+userSchema.method("isPasswordCorrect",asyncHandler(async function(password){
 
-userSchema.static("matchPasswordAndReturnToken", async function (email, password) {
-
-    try {
-
-        const user = await this.findOne({ email });
-
-        if (!user) throw new Error('Invalid Email or Password');
-
-
-        const salt = user.salt;
-        const hashPassword = user.password;
+        const salt = this.salt;
+        const hashPassword = this.password;
 
         const userProvidedHashPassword = createHmac("sha256", salt).update(password).digest("hex");
 
-        if (hashPassword !== userProvidedHashPassword) throw new Error('Invalid Email or Password');
+        if (hashPassword !== userProvidedHashPassword) {
+            throw new ApiError(400, "Invalid Username or Password")
+        }
 
-        const userId = user._id.toString();
-        const userEmail = user.email;
-        const userName = user.username;
-        
-        const payload = { email:userEmail, username:userName, _id: userId };
-        
+        return true; 
 
-        return payload
+}))
 
-    }
-    catch (error) {
+//generate Access Token
 
-        console.error("Error in matchPasswordAndReturnToken:", error);
-        throw new Error("Failed to match password and return token");
-    }
+userSchema.methods.generateAccessToken = function(){
 
-})
+   return jwt.sign(
+        {
+            _id: this._id,
+            email: this.email,
+            username: this.username
+        },
+        process.env.ACCESS_TOKEN_SECRATE_KEY,
+        {
+            expiresIn: process.env.ACCESS_TOKEN_EXPIRY
+        }
+    )
+}
+
+// generate refresh token
+
+userSchema.methods.generateRefreshToken = function(){
+
+   return jwt.sign(
+        {
+            _id: this._id
+
+        },
+        process.env.REFRESH_TOKEN_SECRATE_KEY,
+        {
+            expiresIn: process.env.REFRESH_TOKEN_EXPIRY
+        }
+    )
+}
+
+// Generate temporary token
+
+userSchema.methods.generateTemporaryToken = function(){
+
+    const unhashToken = crypto.randomBytes(20).toString("hex");
+
+    const hashToken = crypto
+    .createHash("sha256")
+    .update(unhashToken)
+    .digest("hex")
+
+
+    const tokenExpiry = Date.now() + (5*60*1000)   // 5min
+
+    return { unhashToken, hashToken, tokenExpiry }
+}
+
+
 
 
 module.exports = model('User', userSchema);
