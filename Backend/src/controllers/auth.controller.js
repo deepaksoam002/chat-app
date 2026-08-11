@@ -1,149 +1,157 @@
 const User = require('../models/user.models');
-const { verifyRefreshToken, getAccessToken, getRefreshToken } = require('../../src/utils/auth')
+const { verifyRefreshToken } = require('../../src/utils/auth');
+const { ApiError } = require('../utils/apiError');
+const { ApiResponse } = require('../utils/apiResponse');
+const { asyncHandler } = require('../utils/asyncHandler');
 
 
-const register = async (req, res) => {
-
-    try {
-
-        const { username, email, password } = req.body;
-
-        if (!username || !email || !password) {
-
-            res.status(400).json({ error: "Bad Request", message: "missing required field" });
-        };
-
-        // create refreshToken version
-        const refreshTokenVersion = 7548;   // this field is require in schema  so for now i save that random number but when we create refresh token it will override with some random number
-
-        const user = await User.create({ username, email, password, refreshTokenVersion });
-
-        // genrate accessToken and RefreshToken
-
-        const refreshToken = await getRefreshToken(user);
-        const accessToken = getAccessToken(user);
-
-        const payload = {
-            id: user.id,
-            username: user.username,
-            email: user.email,
-            accessToken: accessToken
-        }
-
-        res.cookie('uuid30d', refreshToken, {
-            httpOnly: true,
-            secure: true,
-            sameSite: 'strict',
-            maxAge: 30 * 24 * 60 * 60 * 1000
-        });
-
-        res.status(201).json({ message: "new user create successfully", payload });
-
-    } catch (error) {
-
-        console.log("Internal Server Error:", error);
-        res.status(500).json({ "error": "Internal Server Error" })
-    }
-
+const cookiesOptions = {
+    httpOnly: true,
+    secure: true,
 }
 
+const generateRefreshTokenAndAccessToken = async (userId) => {
 
-
-const login = async (req, res) => {
-    console.log("getting login request" )
     try {
 
-        const { email, password } = req.body;
+        const user = await User.findById(userId);
 
-        const data = await User.matchPasswordAndReturnToken(email, password);
+        const accessToken = user.generateAccessToken();
+        const refreshToken = user.generateRefreshToken();
 
-        if (!data) {
-            return res.status(401).json({ error: "Invalid email or password" });
-        }
-
-        const refreshToken = await getRefreshToken(data);
-        const accessToken = await getAccessToken(data);
-
-        if (!refreshToken && !accessToken) {
-
-            return res.status(500).json({ message: "Internal Server Error" });
-        }
-
-        res.cookie('uuid30d', refreshToken, {
-            httpOnly: true,
-            secure: true,
-            sameSite: 'strict',
-            maxAge: 30 * 24 * 60 * 60 * 1000
-        });
-
-        return res.status(200).json({ message: "Login Successful", user: data.payload, accessToken: accessToken });
+        user.refreshToken = refreshToken;
+        await user.save({ validateBeforeSave: false });
+        return { accessToken, refreshToken };
 
     } catch (error) {
 
-        console.error("Login error:", error);
-        return res.status(401).json({ error: "Invalid email or password" });
-
+        console.error("Error:", error);
+        throw new ApiError(500, " Something went wrong");
     }
 }
 
 
-const refresh = async (req, res) => {
+const register = asyncHandler(async (req, res) => {
 
-    const refreshTokenCookieName = "uuid30d";
-    const refreshToken = req.cookies[refreshTokenCookieName];
 
-    if (!refreshToken || refreshToken == undefined) {
+    const { username, email, password } = req.body;
 
-        return res.status(401).json({ "error": "Unauthorized Access! Please login again" })
 
-    }
+    const user = await User.create({ username, email, password, refreshToken });
 
-    try {
+    // genrate accessToken and RefreshToken
 
-        const decoded = verifyRefreshToken(refreshToken);           // decode refreshtoken
+    const { refreshToken, accessToken } = generateRefreshTokenAndAccessToken(user._id);
 
-        if (!decoded) {
 
-            return res.status(401).json({
-                error: "Unauthrized",
-                message: "Authentication Failed!! Please login again",
-                status: "401"
-            })
-        }
+    return res.status(201)
+        .cookie("accessToken", accessToken, cookiesOptions)
+        .cookie("refreshToken", refreshToken, cookiesOptions)
+        .json(
+            new ApiResponse(
+                201,
+                {
+                    accessToken,
+                    refreshToken
+                },
+                "New User register Successfully"
+            )
+        );
 
-        const user = await User.findById(decoded.id);
 
-        if (!decoded.tokenVersion || decoded.tokenVersion != user.refreshTokenVersion) {
-
-            return res.status(401).json({
-                error: "Unauthrized",
-                message: "Authentication Failed!! token version mismatch",
-                status: "401",
-
-            })
-        }
-
-        const payload = {
-            id: user.id,
-            username: user.username,
-            email: user.email,
-        }
-
-        const newAccessToken = getAccessToken(decoded);
-        res.status(200).json({
-            message: "new token send successfully",
-            accessToken: newAccessToken,
-            payload: payload
-        })
-
-    } catch (error) {
-
-        res.status(401).json({ "error": "Unauthorized Access! Please login again" })
-
-    }
 }
+)
 
-const logout = async (req, res) => { };
+
+const login = asyncHandler(async (req, res) => {
+
+    const { username, email, password } = req.body;
+
+    const user = await User.findOne({ $or: [{username}, {email}] });
+
+    const isPasswordCorrect = user.isPasswordCorrect(password);
+
+    if (!isPasswordCorrect) {
+        throw new ApiError(401, "Invalid credentials")
+    }
+
+    const { refreshToken, accessToken } = await generateRefreshTokenAndAccessToken(user._id);
+
+    const loginUser = await User.findById(user._id)
+        .select("-password -salt -isEmailVerified -forgotPasswordToken -forgotPasswordExpiry -emailVerificationToken -emailVerificationExpiry")
+
+
+    return res.status(200)
+        .cookie("accessToken", accessToken, cookiesOptions)
+        .cookie("refreshToken", refreshToken, cookiesOptions)
+        .json(
+            new ApiResponse(
+                200,
+                {
+                    user: loginUser,
+                    refreshToken,
+                    accessToken
+                },
+                "User login successfully"
+            )
+        );
+
+})
+
+
+const refresh = asyncHandler(async (req, res) => {
+
+    const receivedRefreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
+
+    if (!receivedRefreshToken) {
+        throw new ApiError(400, "Unauthorized Access")
+    }
+
+    const payload = verifyRefreshToken(receivedRefreshToken);
+    if (!payload) {
+
+        throw new ApiError(401,"Authentication Failed!! Please login again")
+    }
+
+    const user = await User.findById(payload._id);
+
+    const {accessToken, refreshToken} = generateRefreshTokenAndAccessToken(user._id);
+
+   return res.status(200)
+      .cookie("accessToken",accessToken,cookiesOptions)
+      .cookie("refreshToken",refreshToken,cookiesOptions)
+      .json(
+           new ApiResponse(
+            200,
+            {
+                refreshToken,
+                accessToken
+            },
+            "Access token refresh successfully"
+           )
+      )
+})
+
+const logout = asyncHandler(async (req, res) => { 
+    const userId = req.user._id;
+
+    const user = await User.findById(userId);
+
+    user.refreshToken = null;
+    await user.save({validateBeforeSave: false});
+
+    return res.status(200)
+     .clearCookie("accessToken",cookiesOptions)
+     .clearCookie("refreshToken",cookiesOptions)
+     .json(
+        new ApiResponse(
+            200,
+            {},
+            "User logout successfully"
+        )
+     )
+});
+
 const checkUsername = async (req, res) => { }
 const checkEmail = async (req, res) => { }
 const sendEmailVerificationEmail = async (req, res) => { }

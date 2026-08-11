@@ -1,72 +1,98 @@
 const { Schema, model } = require('mongoose');
-const { randomBytes, createHmac } = require('crypto')
+const crypto = require('crypto')
 const { asyncHandler } = require("../utils/asyncHandler");
 const { ApiError } = require("../utils/apiError");
-const  jwt = require("jsonwebtoken");
+const jwt = require("jsonwebtoken");
 
 const userSchema = new Schema({
     username: {
         type: String,
         required: true,
-        unique: true
+        unique: true,
+        trim:true,
+        lowercase:true,
+        index:true
     },
     email: {
         type: String,
         required: true,
-        unique: true
+        unique: true,
+        lowercase:true,
+        trim:true
     },
     password: {
         type: String,
         required: true
     },
     salt: {
-        type: String,
+        type: String
 
     },
     refreshToken: {
-        type: String,
-        required: true
+        type: String
+    },
+    isEmailVerified: {
+        type: Boolean,
+        default: false
+    },
+    forgotPasswordToken: {
+        type: String
+    },
+    forgotPasswordExpiry: {
+        type: String
+    },
+    emailVerificationToken: {
+        type: String
+    },
+    emailVerificationExpiry: {
+        type: String
     }
 }, { timestamps: true });
 
 
 // hash password befor save in data base.........
 
-userSchema.pre("save", asyncHandler( async function () {
-    
+userSchema.pre("save", asyncHandler(async function () {
 
-        if (!this.isModified("password")) return;
 
-        const salt = randomBytes(16).toString();
-        const hashPassword = createHmac('sha256', salt).update(user.password).digest("hex");
+    if (!this.isModified("password")) return;
 
-        this.salt = salt;
-        this.password = hashPassword;
-    
+    const salt = crypto.randomBytes(16).toString();
+    const hashPassword = crypto
+        .createHmac('sha256', salt)
+        .update(user.password)
+        .digest("hex");
+
+    this.salt = salt;
+    this.password = hashPassword;
+
 }
 ));
 
 
-userSchema.method("isPasswordCorrect",asyncHandler(async function(password){
+userSchema.method.isPasswordCorrect = async function (password) {
 
-        const salt = this.salt;
-        const hashPassword = this.password;
+    const salt = this.salt;
+    const hashPassword = this.password;
 
-        const userProvidedHashPassword = createHmac("sha256", salt).update(password).digest("hex");
+    const userProvidedHashPassword = crypto
+        .createHmac("sha256", salt)
+        .update(password)
+        .digest("hex");
 
-        if (hashPassword !== userProvidedHashPassword) {
-            throw new ApiError(400, "Invalid Username or Password")
-        }
+    if (hashPassword !== userProvidedHashPassword) {
+        throw new ApiError(400, "Invalid Username or Password")
+    }
 
-        return true; 
+    return true;
+}
 
-}))
 
 //generate Access Token
 
-userSchema.methods.generateAccessToken = function(){
+userSchema.methods.generateAccessToken = function () {
 
-   return jwt.sign(
+    return jwt.sign(
         {
             _id: this._id,
             email: this.email,
@@ -81,9 +107,9 @@ userSchema.methods.generateAccessToken = function(){
 
 // generate refresh token
 
-userSchema.methods.generateRefreshToken = function(){
+userSchema.methods.generateRefreshToken = function () {
 
-   return jwt.sign(
+    return jwt.sign(
         {
             _id: this._id
 
@@ -97,17 +123,17 @@ userSchema.methods.generateRefreshToken = function(){
 
 // Generate temporary token
 
-userSchema.methods.generateTemporaryToken = function(){
+userSchema.methods.generateTemporaryToken = function () {
 
     const unhashToken = crypto.randomBytes(20).toString("hex");
 
     const hashToken = crypto
-    .createHash("sha256")
-    .update(unhashToken)
-    .digest("hex")
+        .createHash("sha256")
+        .update(unhashToken)
+        .digest("hex")
 
 
-    const tokenExpiry = Date.now() + (5*60*1000)   // 5min
+    const tokenExpiry = Date.now() + (5 * 60 * 1000)   // 5min
 
     return { unhashToken, hashToken, tokenExpiry }
 }
