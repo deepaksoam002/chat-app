@@ -1,0 +1,380 @@
+/* Modern Reset & Base Variable Theme */
+:root {
+    --primary-color: #a855f7;       /* Modern vibrant purple */
+    --primary-hover: #9333ea;
+    --bg-main: #f8fafc;             /* Soft off-white background */
+    --bg-card: #ffffff;
+    --border-color: #e2e8f0;         /* Soft slate borders instead of raw gray */
+    --text-main: #0f172a;
+    --text-muted: #64748b;
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.08);
+}
+
+/* App Container Layout */
+.main-container {
+    display: flex;
+    justify-content: center;
+    align-items: stretch;
+    height: 75vh;
+    max-width: 1200px;
+    margin: 40px auto;
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    box-shadow: var(--shadow-lg);
+    overflow: hidden; /* Clips children to the rounded corners */
+}
+
+/* Left Sidebar - Contact List */
+.contact-container {
+    width: 32%;
+    background-color: #fcfcfd;
+    border-right: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+}
+
+.contact-box {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.contact-box span:first-child {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-main);
+    letter-spacing: -0.5px;
+}
+
+.contact-list{
+    padding: 20px;
+
+}
+/* Plus Icon Styling */
+.addUser {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: white;
+    background-color: var(--primary-color);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(168, 85, 247, 0.4);
+}
+
+.addUser:hover {
+    background-color: var(--primary-hover);
+    transform: scale(1.05);
+}
+
+/* Right Sidebar - Message Container */
+.message-container {
+    width: 68%;
+    display: flex;
+    flex-direction: column;
+    min-height: stretch;
+    background-color: var(--bg-main);
+    overflow: hidden;
+}
+
+/* Top Active Chat Banner */
+.contact-banner {
+    background-color: var(--bg-card);
+    padding: 16px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color);
+    box-shadow: var(--shadow-sm);
+}
+
+.contact-banner span:first-child {
+    font-weight: 600;
+    color: var(--text-main);
+    font-size: 1.05rem;
+}
+
+.contact-banner span:last-child {
+    font-size: 0.85rem;
+    color: #10b981; /* Fresh green for online status */
+    background-color: #ecfdf5;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-weight: 500;
+}
+
+/* Live Chat Workspace */
+.chat-space {
+    flex-grow: 1;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow-y: auto;
+}
+
+/* Message Bubble Enhancements */
+/* Base styles dynamically applying to your classes */
+[class^="message-"] {
+    max-width: 65%;
+    padding: 12px 16px;
+    border-radius: 16px;
+    font-size: 0.95rem;
+    line-height: 1.4;
+    word-break: break-word;
+    box-shadow: var(--shadow-sm);
+}
+
+/* Messages sent by current user ('shiva1234') */
+.message-emit {
+    align-self: flex-end;
+    background-color: var(--primary-color);
+    color: white;
+    border-bottom-right-radius: 4px;
+}
+
+/* Fallback/Messages from incoming users */
+.message-on {
+    align-self: flex-start;
+    background-color: var(--bg-card);
+    color: var(--text-main);
+    border-bottom-left-radius: 4px;
+    border: 1px solid var(--border-color);
+}
+
+/* Bottom Actions Box */
+.action-box {
+    background-color: var(--bg-card);
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    border-top: 1px solid var(--border-color);
+}
+
+#messagebox {
+    flex-grow: 1;
+    padding: 14px 18px;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    font-size: 0.95rem;
+    background-color: var(--bg-main);
+    color: var(--text-main);
+    transition: all 0.2s ease;
+}
+
+#messagebox:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    background-color: var(--bg-card);
+    box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.15);
+}
+
+/* Global Buttons UI */
+button {
+    background-color: var(--primary-color);
+    color: white;
+    font-weight: 600;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.95rem;
+}
+
+button:hover {
+    background-color: var(--primary-hover);
+    transform: translateY(-1px);
+}
+
+button:active {
+    transform: translateY(0);
+}
+
+/* --- Centered Blur Modal Windows --- */
+.addUserContainer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(15, 23, 42, 0.3); /* Soft dark backdrop Overlay */
+    backdrop-filter: blur(8px);               /* Premium glassmorphism effect */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background-color: var(--bg-card);
+    padding: 40px;
+    border-radius: 20px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    position: relative;
+    min-width: 500px;
+    border: 1px solid var(--border-color);
+    animation: scaleUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.searchUserField {
+    display: flex;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.emailField {
+    flex-grow: 1;
+    padding: 15px 20px;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    outline: none;
+}
+
+.emailField:focus {
+    border-color: var(--primary-color);
+}
+
+.close-modal {
+    position: absolute;
+    top: 14px;
+    right: 18px;
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: color 0.2s ease;
+    line-height: 1;
+}
+
+.close-modal:hover {
+    color: #ef4444; /* Soft red error color on hover close */
+}
+
+/* Smooth modal entry animation */
+@keyframes scaleUp {
+    from {
+        opacity: 0;
+        transform: scale(0.95) translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+/* Container padding */
+.searchUserBox {
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+    padding: 1px 15px;
+}
+
+/* The Card Wrapper */
+.user-profile-card {
+    display: flex;
+    align-items: center;
+    background: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 16px;
+    width: 100%;
+    max-width: 360px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s ease;
+}
+
+.user-profile-card:hover {
+    transform: translateY(-2px);
+}
+
+/* Avatar Styling */
+.avatar-container {
+    margin-right: 16px;
+    flex-shrink: 0;
+}
+
+.user-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #007bff; /* Optional accent border */
+}
+
+/* Text Styling */
+.user-details {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    text-align: left;
+}
+
+.user-name {
+    margin: 0 0 4px 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #333333;
+}
+
+.user-email {
+    margin: 0;
+    font-size: 13px;
+    color: #666666;
+    word-break: break-all;
+}
+
+/* Add Button Styling */
+.add-contact-btn {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background 0.2s;
+}
+
+.add-contact-btn:hover {
+    background-color: #0056b3;
+}
+
+
+
+
+.contact{
+    display: flex;
+    padding: 10px;
+}
+.contact-avatar span{
+    border-radius: 50%;
+    background-color: #10b981;
+    color: white;
+
+}
+.contact-details{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    width: 100%;
+    padding: 10px;
+}
+.contact-name-time{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
