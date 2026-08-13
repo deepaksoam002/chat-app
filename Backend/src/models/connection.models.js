@@ -13,8 +13,7 @@ const ConnectionSchema = new mongoose.Schema({
     ref: 'User', 
     required: true 
   },
-  // Bonus: You can store extra metadata here
-  roomID: { type: String }, // Useful if you want a dedicated Socket.io room string
+  roomID: { type: String }, 
   status: { type: String, enum: ['pending', 'accepted', 'blocked'], default: 'accepted' },
   connectedAt: { type: Date, default: Date.now }
 });
